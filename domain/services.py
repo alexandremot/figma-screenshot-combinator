@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from typing import List
 from .entities import Item
 from .ports import ItemRepository
+from domain.ports import FileStoragePort
+
 
 class ItemService(ABC):
     @abstractmethod
@@ -24,6 +26,7 @@ class ItemService(ABC):
     def delete_item(self, item_id: str) -> None:
         pass
 
+
 class ItemServiceImpl(ItemService):
     def __init__(self, item_repository: ItemRepository):
         self.item_repository = item_repository
@@ -45,3 +48,13 @@ class ItemServiceImpl(ItemService):
 
     def delete_item(self, item_id: str) -> None:
         self.item_repository.delete(item_id)
+
+
+class FileService:
+    def __init__(self, storage: FileStoragePort):
+        self.storage = storage
+
+    def save_zip(self, filename: str, data: bytes) -> str:
+        if not filename.endswith('.zip'):
+            raise ValueError("Arquivo deve ser .zip")
+        return self.storage.save(filename, data)

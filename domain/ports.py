@@ -22,3 +22,8 @@ class ItemRepository(ABC):
     @abstractmethod
     def delete(self, item_id: str) -> None:
         pass
+
+class FileStoragePort(ABC):
+    @abstractmethod
+    def save(self, filename: str, data: bytes) -> str:
+        pass
