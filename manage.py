@@ -1,7 +1,7 @@
 # manage.py
 from fastapi import FastAPI
 from adapters.assembly import Container
-import blueprints.main  # Importa o módulo, não só o objeto main
+import blueprints.main
 import logging
 
 logging.basicConfig(level=logging.INFO)

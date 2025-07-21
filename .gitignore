@@ -1,4 +1,4 @@
 uploads/*
 temp/*
-stk.deb
 remove.sh
+etc/

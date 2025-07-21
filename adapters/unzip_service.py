@@ -1,6 +1,7 @@
-import os
-import zipfile
 import logging
+import os
+import shutil
+import zipfile
 
 # BASE_DIR = raiz do projeto
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -12,29 +13,31 @@ class UnzipService:
         os.makedirs(self.temp_dir, exist_ok=True)
         self.logger = logging.getLogger("unzip_service")
 
-
     def unzip_file(self, zip_path):
-        extract_path = os.path.join(
-            self.temp_dir, os.path.splitext(os.path.basename(zip_path))[0]
-        )
+        base_name = os.path.splitext(os.path.basename(zip_path))[0]
+        extract_path = os.path.join(self.temp_dir, base_name)
+
+        if os.path.exists(extract_path):
+            shutil.rmtree(extract_path)
+
         os.makedirs(extract_path, exist_ok=True)
+
         with zipfile.ZipFile(zip_path, "r") as zip_ref:
             for member in zip_ref.namelist():
-                # Ignora diretórios
-                if not member.endswith('/'):
-                    # Extrai apenas o nome do arquivo, ignorando subpastas
-                    filename = os.path.basename(member)
-                    if filename:  # Evita strings vazias
-                        dest = os.path.join(extract_path, filename)
-                        with zip_ref.open(member) as source, open(dest, "wb") as target:
-                            target.write(source.read())
+                parts = member.split('/')
+                if parts[0] == base_name:
+                    parts = parts[1:]
+
+                if not parts:
+                    continue
+
+                target_path = os.path.join(extract_path, *parts)
+
+                if member.endswith('/'):
+                    os.makedirs(target_path, exist_ok=True)
+                else:
+                    os.makedirs(os.path.dirname(target_path), exist_ok=True)
+                    with zip_ref.open(member) as source, open(target_path, "wb") as target:
+                        shutil.copyfileobj(source, target)
+
         return extract_path
-
-
-    # método para descompactar todos os arquivos zip na pasta de uploads
-    # (manter aqui para o caso de vir a precisar no futuro)
-    def unzip_all(self):
-        for filename in os.listdir(self.uploads_dir):
-            if filename.endswith(".zip"):
-                zip_path = os.path.join(self.uploads_dir, filename)
-                self.unzip_file(zip_path)
