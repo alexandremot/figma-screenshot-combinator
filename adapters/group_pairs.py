@@ -2,6 +2,8 @@ from pathlib import Path
 import uuid
 from typing import List, Tuple
 import json
+import namesgenerator
+
 
 class GroupPairs:
     def __init__(self, base_dir: Path):
@@ -17,9 +19,9 @@ class GroupPairs:
         self.organization_data["pairs"] = []  # Limpa os dados anteriores
         
         for figma_path, screenshot_path in pairs:
-            # Cria um UUID único para este par
-            pair_uuid = str(uuid.uuid4())
-            pair_dir = self.grouped_pairs_dir / pair_uuid
+            # Cria um nome único para este par
+            pair_name = namesgenerator.get_random_name()
+            pair_dir = self.grouped_pairs_dir / pair_name
             pair_dir.mkdir()
             
             # Copia as imagens para o diretório do par
@@ -36,7 +38,7 @@ class GroupPairs:
             
             # Adiciona ao registro de organização
             self.organization_data["pairs"].append({
-                "id": pair_uuid,
+                "name": pair_name,
                 "files": [
                     figma_filename,
                     screenshot_filename

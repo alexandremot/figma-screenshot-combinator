@@ -42,7 +42,7 @@ async def upload_zip(
         
         return {
             "pairs": group_pairs_data["pairs"],
-            "grouped_pairs_dir": str(group_pairs_data["pairs"][0]["id"]) if group_pairs_data["pairs"] else "",
+            "grouped_pairs_dir": str(group_pairs_data["pairs"][0]["name"]) if group_pairs_data["pairs"] else "",
             "total_pairs": len(group_pairs_data["pairs"])
         }
     except ValueError as e:
