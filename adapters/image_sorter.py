@@ -6,15 +6,19 @@ from scipy.optimize import linear_sum_assignment
 import numpy as np
 from domain.ports import ImageComparisonPort
 from domain.entities import ImagePair, ComparisonResult
+from .group_pairs import GroupPairs
 
 class ImageComparisonAdapter(ImageComparisonPort):
-    def __init__(self):
-        # Configurações para preprocessamento
+    def __init__(self, base_dir: Path = None):
+        """Inicializa o adaptador de comparação de imagens."""
+        self.base_dir = base_dir or Path("./temp")
         self.tamanho_alvo = (64, 64)  # Aumentado para capturar mais detalhes
         self.limiar_binarizacao = 128
         self.kernel_blur = (2, 2)  # Ajustado para melhor redução de ruído
         self.debug = False
-        self.temp_dir = Path("temp")
+        self.temp_dir = self.base_dir / "temp"
+        self.temp_dir.mkdir(exist_ok=True)
+        self.group_pairs = GroupPairs(self.base_dir)
 
     def carregar_imagens(self, diretorio: Path) -> List[Tuple[str, Image.Image]]:
         """Carrega todas as imagens de um diretório e retorna uma lista de tuplas
@@ -50,14 +54,13 @@ class ImageComparisonAdapter(ImageComparisonPort):
         # Garante que os arrays sejam do tipo float
         img1_array = img1_array.astype(np.float64)
         img2_array = img2_array.astype(np.float64)
-        
         mu1 = np.mean(img1_array)
         mu2 = np.mean(img2_array)
         sigma1 = np.std(img1_array)
         sigma2 = np.std(img2_array)
         sigma12 = np.mean((img1_array - mu1) * (img2_array - mu2))
         k1, k2 = 0.01, 0.03
-        L = 255.0  # Usando float em vez de int
+        L = 255.0 # Usando float em vez de int
         c1 = (k1 * L)**2
         c2 = (k2 * L)**2
         return ((2 * mu1 * mu2 + c1) * (2 * sigma12 + c2)) / \
@@ -68,21 +71,17 @@ class ImageComparisonAdapter(ImageComparisonPort):
         # Converte imagens para arrays numpy
         img1_array = np.array(img1)
         img2_array = np.array(img2)
-        
         # Calcula diferença de histograma
         hist1 = np.array(img1.histogram())
         hist2 = np.array(img2.histogram())
         diff_hist = np.sum(np.abs(hist1 - hist2)) / (hist1.size * 255.0)
-        
         # Calcula diferença estrutural (SSIM)
         ssim = self.calcular_ssim(img1_array, img2_array)
-        
         # Combina as métricas com pesos ajustados
         return 0.2 * diff_hist + 0.8 * (1 - ssim)  # Maior peso para SSIM
 
     def compare_images(self, figma_dir: Path = None, screenshots_dir: Path = None) -> ComparisonResult:
         """Encontra os pares correspondentes entre imagens do Figma e screenshots.
-        
         Se os diretórios não forem especificados, usa os diretórios padrão em temp/figma e temp/screenshots.
         """
         # Usa diretórios padrão se não forem especificados
@@ -90,6 +89,10 @@ class ImageComparisonAdapter(ImageComparisonPort):
             figma_dir = self.temp_dir / "figma"
         if screenshots_dir is None:
             screenshots_dir = self.temp_dir / "screenshots"
+        
+        # Cria diretórios temporários se não existirem
+        figma_dir.mkdir(exist_ok=True)
+        screenshots_dir.mkdir(exist_ok=True)
         
         # Verifica se os diretórios existem
         if not figma_dir.exists():
@@ -127,5 +130,8 @@ class ImageComparisonAdapter(ImageComparisonPort):
             for i, j in zip(row_ind, col_ind)
         ]
         
+        # Agrupa os pares em diretórios
+        if pairs:
+            self.group_pairs.group_pairs([(pair.figma_path, pair.screenshot_path) for pair in pairs])
+        
         return ComparisonResult(pairs, len(pairs))
-    

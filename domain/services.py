@@ -64,7 +64,12 @@ class FileService:
     
 class ImageComparisonService:
     def __init__(self, comparison_port: ImageComparisonPort = None):
-        self.comparison_port = comparison_port        
+        self.comparison_port = comparison_port    
+
     def compare_images(self, figma_dir: Path = None, screenshots_dir: Path = None) -> ComparisonResult:
         """Compara imagens usando o adaptador fornecido."""
         return self.comparison_port.compare_images(figma_dir, screenshots_dir)
+
+    def get_group_pairs_data(self) -> dict:
+        """Retorna os dados dos pares agrupados."""
+        return self.comparison_port.group_pairs.organization_data
