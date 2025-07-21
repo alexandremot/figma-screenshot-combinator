@@ -1,8 +1,11 @@
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import List
 from .entities import Item
+from .entities import ImagePair, ComparisonResult
 from .ports import ItemRepository
 from domain.ports import FileStoragePort
+from domain.ports import ImageComparisonPort
 
 
 class ItemService(ABC):
@@ -58,3 +61,10 @@ class FileService:
         if not filename.endswith('.zip'):
             raise ValueError("Arquivo deve ser .zip")
         return self.storage.save(filename, data)
+    
+class ImageComparisonService:
+    def __init__(self, comparison_port: ImageComparisonPort = None):
+        self.comparison_port = comparison_port        
+    def compare_images(self, figma_dir: Path = None, screenshots_dir: Path = None) -> ComparisonResult:
+        """Compara imagens usando o adaptador fornecido."""
+        return self.comparison_port.compare_images(figma_dir, screenshots_dir)
